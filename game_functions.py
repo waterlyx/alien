@@ -68,7 +68,7 @@ def check_play_button(ai_settings, screen, stats, play_button, ship, aliens, bul
         ship.center_ship()
 
 
-def update_screen(ai_settings, screen, stats, ship, aliens, bullets, play_button):
+def update_screen(ai_settings, screen, stats, sb, ship, aliens, bullets, play_button):
 
     if not stats.game_active:
         play_button.draw_button()
@@ -76,6 +76,8 @@ def update_screen(ai_settings, screen, stats, ship, aliens, bullets, play_button
         """"更新屏幕上的图案，并切换到新屏幕"""
         # 每次循环时都重绘屏幕
         screen.fill(ai_settings.bg_color)
+        # 显示得分
+        sb.show_score()
         # 绘制飞船
         ship.blitme()
         # 重绘子弹
@@ -86,7 +88,7 @@ def update_screen(ai_settings, screen, stats, ship, aliens, bullets, play_button
     pygame.display.flip()
 
 
-def update_bullets(ai_settings, screen, ship, aliens, bullets):
+def update_bullets(ai_settings, screen, stats, sb, ship, aliens, bullets):
     """更新子弹的位置，并删除已经消失的子弹"""
     # 更新子弹的位置
     bullets.update()
@@ -96,12 +98,19 @@ def update_bullets(ai_settings, screen, ship, aliens, bullets):
         if bullet.rect.bottom <= 0:
             bullets.remove(bullet)
 
-    check_bullet_alien_collisions(ai_settings, screen, ship, aliens, bullets)
+    check_bullet_alien_collisions(ai_settings, screen, stats, sb, ship, aliens, bullets)
 
 
-def check_bullet_alien_collisions(ai_settings, screen, ship, aliens, bullets):
+def check_bullet_alien_collisions(ai_settings, screen, stats, sb, ship, aliens, bullets):
     """击中外星人"""
     collisions = pygame.sprite.groupcollide(bullets, aliens, True, True)
+
+    if collisions:
+        for aliens in collisions.values():
+            stats.score += ai_settings.alien_points * len(aliens)
+            sb.prep_score()
+        check_high_score(stats, sb, ai_settings)
+
     if len(aliens) == 0:
         bullets.empty()
         ai_settings.increase_speed()
@@ -173,7 +182,7 @@ def change_fleet_direction(ai_settings, aliens):
 
 def ship_hit(ai_settings, stats, screen, ship, aliens, bullets):
     """响应被外星人撞到的飞船"""
-    if stats.ships_left > 0:
+    if stats.ships_left-1 > 0:
         stats.ships_left -= 1
 
         # 清空外星人列表和子弹列表
@@ -197,3 +206,12 @@ def check_aliens_bottom(ai_settings, stats, screen, ship, aliens, bullets):
         if alien.rect.bottom >= screen_rect.bottom:
             ship_hit(ai_settings, stats, screen, ship, aliens, bullets)
             break
+
+
+def check_high_score(stats, sb, ai_settings):
+    """检查是否诞生了新的最高的得分"""
+    if stats.score > stats.high_score:
+        stats.high_score = stats.score
+        sb.prep_high_score()
+        with open(ai_settings.filename, 'w') as file_object:
+            file_object.write(str(stats.score))
