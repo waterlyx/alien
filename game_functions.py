@@ -25,7 +25,7 @@ def fire_bullet(ai_settings, screen, ship, bullets):
         bullets.add(new_bullet)
 
 
-def check_events(ai_settings, screen, ship, bullets):
+def check_events(ai_settings, screen, stats, play_button, ship, aliens, bullets):
     """响应按键和鼠标事件"""
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -42,17 +42,44 @@ def check_events(ai_settings, screen, ship, bullets):
                 # 向左停止移动飞船
                 ship.moving_left = False
 
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            check_play_button(ai_settings, screen, stats, play_button, ship, aliens, bullets, mouse_x, mouse_y)
 
-def update_screen(ai_settings, screen, ship, aliens,bullets):
-    """"更新屏幕上的图案，并切换到新屏幕"""
-    # 每次循环时都重绘屏幕
-    screen.fill(ai_settings.bg_color)
-    # 绘制飞船
-    ship.blitme()
-    # 重绘子弹
-    for bullet in bullets.sprites():
-        bullet.draw_bullet()
-    aliens.draw(screen)
+
+def check_play_button(ai_settings, screen, stats, play_button, ship, aliens, bullets, mouse_x, mouse_y):
+    """在玩家单击play按钮的时候的开始新的游戏"""
+    button_clicked = play_button.rect.collidepoint(mouse_x, mouse_y)
+    if button_clicked and not stats.game_active:
+        # 隐藏光标
+        pygame.mouse.set_visible(False)
+        # 重置游戏统计信息
+        stats.reset_stats()
+        stats.game_active = True
+
+        # 清空外星人的列表和子弹
+        aliens.empty()
+        bullets.empty()
+
+        # 创建一群外星人和一个飞船
+        create_fleet(ai_settings, screen, ship, aliens)
+        ship.center_ship()
+
+
+def update_screen(ai_settings, screen, stats, ship, aliens, bullets, play_button):
+
+    if not stats.game_active:
+        play_button.draw_button()
+    else:
+        """"更新屏幕上的图案，并切换到新屏幕"""
+        # 每次循环时都重绘屏幕
+        screen.fill(ai_settings.bg_color)
+        # 绘制飞船
+        ship.blitme()
+        # 重绘子弹
+        for bullet in bullets.sprites():
+            bullet.draw_bullet()
+        aliens.draw(screen)
     # 让最近绘制的屏幕可见
     pygame.display.flip()
 
@@ -153,11 +180,11 @@ def ship_hit(ai_settings, stats, screen, ship, aliens, bullets):
         # 创建新的外星人，并将飞船放到屏幕底部中央
         create_fleet(ai_settings, screen, ship, aliens)
         ship.center_ship()
-
         # 暂停
-        sleep(0.5)
+        sleep(1.5)
     else:
         stats.game_active = False
+        pygame.mouse.set_visible(True)
 
 
 def check_aliens_bottom(ai_settings, stats, screen, ship, aliens, bullets):
