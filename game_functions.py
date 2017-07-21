@@ -5,7 +5,7 @@ from bullet import Bullet
 from alien import Alien
 
 
-def check_keydown_events(event, ai_settings, screen, ship, bullets):
+def check_keydown_events(event, ai_settings, screen, ship, bullets, sb):
     if event.key == pygame.K_RIGHT:
         # 向右移动飞船
         ship.moving_right = True
@@ -13,16 +13,18 @@ def check_keydown_events(event, ai_settings, screen, ship, bullets):
         # 向左移动飞船
         ship.moving_left = True
     elif event.key == pygame.K_SPACE:
-        fire_bullet(ai_settings, screen, ship, bullets)
+        fire_bullet(ai_settings, screen, ship, bullets, sb)
     elif event.key == pygame.K_q:
         sys.exit()
 
 
-def fire_bullet(ai_settings, screen, ship, bullets):
+def fire_bullet(ai_settings, screen, ship, bullets, sb):
     # 创建一颗子弹，并将其加入到编组bullets中
     if len(bullets) < ai_settings.bullets_allowed:
-        new_bullet = Bullet(ai_settings, screen, ship)
+        new_bullet = Bullet(ai_settings, screen, ship, sb)
         bullets.add(new_bullet)
+        # 更新分数
+        sb.prep_score()
 
 
 def check_events(ai_settings, screen, stats, sb, play_button, ship, aliens, bullets):
@@ -32,7 +34,7 @@ def check_events(ai_settings, screen, stats, sb, play_button, ship, aliens, bull
             sys.exit()
 
         elif event.type == pygame.KEYDOWN:
-            check_keydown_events(event, ai_settings, screen, ship, bullets)
+            check_keydown_events(event, ai_settings, screen, ship, bullets, sb)
 
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_RIGHT:
